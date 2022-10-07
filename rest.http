@@ -1,0 +1,30 @@
+###Get a list of all Book
+GET http://localhost:5600/Book
+
+### Create a Book
+POST http://localhost:5600/Book
+Content-Type: application/json
+
+{
+  "Book": "ATOMIC HABITS",
+  "author": JAMES CLEAR
+}
+
+### GET a Book by id
+GET http://localhost:5600/Book/633a95309163fae02dfbd9ee
+
+### Update a Book by id
+PATCH  http://localhost:5600/Book/633a95309163fae02dfbd9ee
+Content-Type: application/json
+
+{
+  "Book":"Believe in Yourself",
+  "author" : Dr Joseph Murphy
+}
+
+
+### Delete a Book by id
+DELETE  http://localhost:5600/Book/633a95309163fae02dfbd9ee
+
+### 404 route Not Found
+GET http://localhost:5600/abc_xyz
