@@ -13,8 +13,8 @@ module.exports = {
   },
 createNewBook: async (req, res, next) => {
     try {
-      const Book = new Book(req.body);
-      const result = await Book.save();
+      const book = new Book(req.body);
+      const result = await book.save();
       res.send(result);
     } catch (error) {
       console.log(error.message);
@@ -26,9 +26,8 @@ createNewBook: async (req, res, next) => {
     }
 },
 findBookById: async (req, res, next) => {
-    const id = req.params.id;
     try {
-      const book = await Book.findById(id);
+      const book = await Book.findById(req.params.id);
        //const book = await Book.findOne({ _id: id });
       if (!book) {
         throw createError(404, 'Book does not exist.');
@@ -40,7 +39,7 @@ findBookById: async (req, res, next) => {
         next(createError(400, 'Invalid Book id'));
         return;
       }
-      next(error);
+      next(error);  
     }
 },
 updateABook: async (req, res, next) => {

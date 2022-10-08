@@ -1,6 +1,13 @@
 const {express} =require("express");
 const mongoose = require("mongoose");
-const BooklistSchema = new mongoose.Schema({
+const ObjectId = mongoose.Types.ObjectId;
+const bookListSchema = new mongoose.Schema({
+    _id: {
+            type: String,
+            default: function () {
+                return new ObjectId().toString()
+        }
+    },
     Book:{
         type:String,
         required:true
@@ -11,5 +18,5 @@ const BooklistSchema = new mongoose.Schema({
     }
 })
 
-const Book = mongoose.model('Book', BooklistSchema);
+const Book = mongoose.model('Book',bookListSchema);
 module.exports = Book;
