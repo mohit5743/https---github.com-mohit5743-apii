@@ -4,16 +4,16 @@ const User = require('../models/user');
 const Book = require('../models/book');
 
 exports.getBook = (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
+  const currentBook = req.query.page || 1;
+  const perBook = 2;
   let totalItems;
   Book.find()
     .countDocuments()
     .then(count => {
       totalItems = count;
       return Book.find()
-        .skip((currentPage - 1) * perPage)
-        .limit(perPage);
+        .skip((currentBook - 1) * perBook)
+        .limit(per);
     })
     .then(books => {
       res.status(200).json({
@@ -38,12 +38,14 @@ exports.createBook = (req, res, next) => {
     throw error;
   }
   const title = req.body.title;
-  const content = req.body.content;
+  const price = req.body.price;
+  const description = req.body.description;
   const author = req.body.author;
   let creator;
   const book = new Book({
     title: title,
-    content: content,
+    price:price,
+    description: description,
     author: author,
     creator: req.userId
   });
@@ -74,7 +76,7 @@ exports.createBook = (req, res, next) => {
 
 exports.getBook = (req, res, next) => {
   const bookId = req.params.bookId;
-  Post.findById(bookId)
+  Book.findById(bookId)
     .then(book => {
       if (!book) {
         const error = new Error('Could not find book.');
@@ -101,7 +103,7 @@ exports.updateBook = (req, res, next) => {
   }
   const title = req.body.title;
   const content = req.body.content;
-  Post.findById(bookId)
+  Book.findById(bookId)
     .then(book => {
       if (!book) {
         const error = new Error('Could not find book.');
@@ -113,8 +115,10 @@ exports.updateBook = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      post.title = title;
-      post.content = content;
+      book.title = title;
+      book.price = price,
+      book.description = description,
+      book.author=author
 
       return book.save();
     })
@@ -131,7 +135,7 @@ exports.updateBook = (req, res, next) => {
 
 exports.deleteBook = (req, res, next) => {
   const bookId = req.params.bookId;
-  Post.findById(bookId)
+  Book.findById(bookId)
     .then(book => {
       if (!book) {
         const error = new Error('Could not find Book.');
@@ -144,13 +148,13 @@ exports.deleteBook = (req, res, next) => {
         throw error;
       }
       // Check logged in user
-      return Post.findByIdAndRemove(bookId);
+      return Book.findByIdAndRemove(bookId);
     })
     .then(result => {
       return User.findById(req.userId);
     })
     .then(user => {
-      user.posts.pull(bookId);
+      user.books.pull(bookId);
       return user.save();
     })
     .then(result => {

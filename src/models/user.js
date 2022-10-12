@@ -14,6 +14,10 @@ const userSchema = new Schema({
     type: String,
     required: true
   },
+  status: {
+    type: String,
+    default: 'I am new!'
+  },
   books: [
     {
       type: Schema.Types.ObjectId,
