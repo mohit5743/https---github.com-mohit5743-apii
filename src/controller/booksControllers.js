@@ -39,10 +39,12 @@ exports.createBook = (req, res, next) => {
   }
   const title = req.body.title;
   const content = req.body.content;
+  const author = req.body.author;
   let creator;
   const book = new Book({
     title: title,
     content: content,
+    author: author,
     creator: req.userId
   });
   book
@@ -52,7 +54,7 @@ exports.createBook = (req, res, next) => {
     })
     .then(user => {
       creator = user;
-      user.posts.push(post);
+      user.books.push(book);
       return user.save();
     })
     .then(result => {
@@ -73,8 +75,8 @@ exports.createBook = (req, res, next) => {
 exports.getBook = (req, res, next) => {
   const bookId = req.params.bookId;
   Post.findById(bookId)
-    .then(post => {
-      if (!post) {
+    .then(book => {
+      if (!book) {
         const error = new Error('Could not find book.');
         error.statusCode = 404;
         throw error;
@@ -113,6 +115,7 @@ exports.updateBook = (req, res, next) => {
       }
       post.title = title;
       post.content = content;
+
       return book.save();
     })
     .then(result => {
