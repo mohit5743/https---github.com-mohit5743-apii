@@ -1,84 +1,162 @@
-const createError = require('http-errors');
-const mongoose = require('mongoose');
-const Book= require('../models/book.js');
+const { validationResult } = require('express-validator/check');
 
-module.exports = {
-  getAllBook: async (req, res, next) => {
-    try {
-      const results = await Book.find({}, { __v: 0 });
-      res.send(results);
-    } catch (error) {
-      console.log(error.message);
-    }
-  },
-createNewBook: async (req, res, next) => {
-    try {
-      const Book = new Book(req.body);
-      const result = await Book.save();
-      res.send(result);
-    } catch (error) {
-      console.log(error.message);
-      if (error.name === 'ValidationError') {
-        next(createError(422, error.message));
-        return;
-      }
-      next(error);
-    }
-},
-findBookById: async (req, res, next) => {
-    const id = req.params.id;
-    try {
-      const book = await Book.findById(id);
-       //const book = await Book.findOne({ _id: id });
-      if (!book) {
-        throw createError(404, 'Book does not exist.');
-      }
-      res.send(book);
-    } catch (error) {
-          console.log(error.message);
-      if (error instanceof mongoose.CastError) {
-        next(createError(400, 'Invalid Book id'));
-        return;
-      }
-      next(error);
-    }
-},
-updateABook: async (req, res, next) => {
-    try {
-      const id = req.params.id;
-      const updates = req.body;
-      const options = { new: true };
+const User = require('../models/user');
+const Book = require('../models/book');
 
-      const result = await Book.findByIdAndUpdate(id, updates, options);
-      if (!result) {
-        throw createError(404, 'Book does not exist');
+exports.getBook = (req, res, next) => {
+  const currentPage = req.query.page || 1;
+  const perPage = 2;
+  let totalItems;
+  Book.find()
+    .countDocuments()
+    .then(count => {
+      totalItems = count;
+      return Book.find()
+        .skip((currentPage - 1) * perPage)
+        .limit(perPage);
+    })
+    .then(books => {
+      res.status(200).json({
+        message: 'Fetched book successfully.',
+        books: books,
+        totalItems: totalItems
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
       }
-      res.send(result);
-    } catch (error) {
-      console.log(error.message);
-      if (error instanceof mongoose.CastError) {
-        return next(createError(400, 'Invalid Product Id'));
-      }
+      next(err);
+    });
+};
 
-      next(error);
-    }
-},
-deleteABook: async (req, res, next) => {
-    const id = req.params.id;
-    try {
-      const result = await Book.findByIdAndDelete(id);
-      // console.log(result);
-      if (!result) {
-        throw createError(404, 'Book does not exist.');
-      }
-      res.send(result);
-    } catch (error) {
-      console.log(error.message);
-      if (error instanceof mongoose.CastError) {
-        next(createError(400, 'Invalid Book id'));
-        return;
-      }
-      next(error);
-    }
+exports.createBook = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('Validation failed, entered data is incorrect.');
+    error.statusCode = 422;
+    throw error;
   }
+  const title = req.body.title;
+  const content = req.body.content;
+  let creator;
+  const book = new Book({
+    title: title,
+    content: content,
+    creator: req.userId
+  });
+  book
+    .save()
+    .then(result => {
+      return User.findById(req.userId);
+    })
+    .then(user => {
+      creator = user;
+      user.posts.push(post);
+      return user.save();
+    })
+    .then(result => {
+      res.status(201).json({
+        message: 'Book created successfully!',
+        book: book,
+        creator: { _id: creator._id, name: creator.name }
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+exports.getBook = (req, res, next) => {
+  const bookId = req.params.bookId;
+  Post.findById(bookId)
+    .then(post => {
+      if (!post) {
+        const error = new Error('Could not find book.');
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({ message: 'Book fetched.', book: book });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+exports.updateBook = (req, res, next) => {
+  const bookId = req.params.bookId;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('Validation failed, entered data is incorrect.');
+    error.statusCode = 422;
+    throw error;
+  }
+  const title = req.body.title;
+  const content = req.body.content;
+  Post.findById(bookId)
+    .then(book => {
+      if (!book) {
+        const error = new Error('Could not find book.');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (book.creator.toString() !== req.userId) {
+        const error = new Error('Not authorized!');
+        error.statusCode = 403;
+        throw error;
+      }
+      post.title = title;
+      post.content = content;
+      return book.save();
+    })
+    .then(result => {
+      res.status(200).json({ message: 'Book updated!', book: result });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+exports.deleteBook = (req, res, next) => {
+  const bookId = req.params.bookId;
+  Post.findById(bookId)
+    .then(book => {
+      if (!book) {
+        const error = new Error('Could not find Book.');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error('Not authorized!');
+        error.statusCode = 403;
+        throw error;
+      }
+      // Check logged in user
+      return Post.findByIdAndRemove(bookId);
+    })
+    .then(result => {
+      return User.findById(req.userId);
+    })
+    .then(user => {
+      user.posts.pull(bookId);
+      return user.save();
+    })
+    .then(result => {
+      res.status(200).json({ message: 'Deleted post.' });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };

@@ -1,21 +1,45 @@
-const express =require("express")
+const express = require('express');
+const { body } = require('express-validator/check');
 
-const router =new express.Router();
+const bookController = require('../controllers/booksControllers');
+const isAuth = require('../middleware/is-author');
 
-const bookController= require("../controller/booksControllers");
+const router = express.Router();
 
-//Get a list of all books
-router.get('/', bookController.getAllBook);
+// GET /feed/books
+router.get('/books', isAuth, bookController.getBook);
 
-//Create a new book
-router.post('/', bookController.createNewBook);
+// POST /feed/books
+router.post(
+  '/post',
+  isAuth,
+  [
+    body('title')
+      .trim()
+      .isLength({ min: 5 }),
+    body('content')
+      .trim()
+      .isLength({ min: 200 })
+  ],
+  bookController.createBook
+);
 
-//Get a book by id
-router.get('/:id', bookController.findBookById);
+router.get('/book/:bookId', isAuth, bookController.getBook);
 
-//Update a book by id
-router.patch('/:id', bookController.updateABook);
+router.put(
+  '/book/:bookId',
+  isAuth,
+  [
+    body('title')
+      .trim()
+      .isLength({ min: 5 }),
+    body('content')
+      .trim()
+      .isLength({ min: 200 })
+  ],
+  feedController.updatePost
+);
 
-//Delete a book by id
-router.delete('/:id', bookController.deleteABook);
-module.exports= router;
+router.delete('/post/:postId', isAuth, bookController.deleteBook);
+
+module.exports = router;
